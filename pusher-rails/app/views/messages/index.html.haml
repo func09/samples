@@ -1,0 +1,65 @@
+= javascript_include_tag 'http://js.pusher.com/2.1/pusher.min.js'
+
+#status
+
+%button#action Action
+
+%ol#messages
+
+#data_storage{ data: { 'pusher-key' => Pusher.key, room_id: @room_id } }
+
+:javascript
+  $(function(){
+
+    function addMessage(message) {
+      var dom = $('<li/>').text(message);
+      $('#messages').prepend(dom);
+    }
+
+    $('button#action').bind('click', function(e){
+      channel.trigger('client-action', { time: new Date() });
+    });
+
+    var channel;
+    var options = {};
+    var pusherKey = $('#data_storage').data('pusher-key');
+    var roomId = $('#data_storage').data('room-id');
+    var pusher = new Pusher(pusherKey, options);
+
+    pusher.connection.bind('connected', function() {
+      $('div#status').text('Real time is go!');
+      var channelName = 'presence-room-' + roomId;
+      channel = pusher.subscribe(channelName);
+
+      // Pusher['presence-room-1'].trigger('client-hoge', { message: 'Hello' })
+      channel.bind('client-hoge', function(data) {
+        addMessage('client-hoge:' + data.message);
+      });
+
+      channel.bind('client-action', function(data) {
+        addMessage('client-action:' + data.time);
+      });
+
+      channel.bind('pusher:member_added', function(member) {
+        addMessage('join user: ' + member.info.name);
+      });
+
+      channel.bind('pusher:member_removed', function(member) {
+        addMessage('leave user: ' + member.info.name);
+      });
+
+      channel.bind('pusher:subscription_succeeded', function() {
+        addMessage('subscribe_success');
+      });
+
+      channel.bind('pusher:subscription_error', function(status) {
+        addMessage(status);
+      });
+
+    });
+
+    // pusher.connection.bind('state_change', function(states) {
+    //   $('div#status').text("Pusher's current state is " + states.current);
+    // });
+
+  });
