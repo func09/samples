@@ -1,2 +1,3 @@
 redis: redis-server
-rails: bundle exec puma
+rails: bundle exec puma --debug
+logs: tail -f log/development.log
